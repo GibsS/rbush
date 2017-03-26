@@ -121,6 +121,38 @@ rbush.prototype = {
         return this;
     },
 
+    update: function(item, x, y, w, h) {
+        if(w == null) {
+            let parent = item.parentNode
+            if(x < parent.minX || x > parent.maxX || y < parent.minY || y > parent.maxY) {
+                this.remove(item)
+                item.minX = item.maxX = x
+                item.minY = item.maxY = y
+                this.insert(item)
+            } else {
+                item.minX = item.maxX = x
+                item.minY = item.maxY = y
+            }
+        } else {
+            let parent = item.parentNode,
+                minx = x - w/2, maxx = x + w/2, miny = y - h/2, maxy = y + h/2
+            if(minx < parent.minX || maxx > parent.maxX || miny < parent.minY || maxy > parent.maxY) {
+                this.remove(item)
+                item.minX = minx
+                item.maxX = maxx
+                item.minY = miny
+                item.maxY = maxy
+                this.insert(item)
+            } else {
+                item.minX = minx
+                item.maxX = maxx
+                item.minY = miny
+                item.maxY = maxy
+            }
+        }
+        return this
+    },
+
     clear: function () {
         this.data = createNode([]);
         return this;
