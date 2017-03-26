@@ -1,3 +1,5 @@
+This is a fork of RBush that adds a very basic support for entity movement.
+
 RBush
 =====
 

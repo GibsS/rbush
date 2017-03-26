@@ -4,6 +4,9 @@ module.exports = rbush;
 
 var quickselect = require('quickselect');
 
+// var epsPercentage = 0.05
+var epsPercentage = 0
+
 function rbush(maxEntries, format) {
     if (!(this instanceof rbush)) return new rbush(maxEntries, format);
 
@@ -121,36 +124,24 @@ rbush.prototype = {
         return this;
     },
 
-    update: function(item, x, y, w, h) {
-        if(w == null) {
-            let parent = item.parentNode
-            if(x < parent.minX || x > parent.maxX || y < parent.minY || y > parent.maxY) {
-                this.remove(item)
-                item.minX = item.maxX = x
-                item.minY = item.maxY = y
-                this.insert(item)
-            } else {
-                item.minX = item.maxX = x
-                item.minY = item.maxY = y
-            }
+    update: function (item, minX, minY, maxX, maxY) {
+        var parent = item.parentNode;
+
+        if (minX < parent.minX || maxX > parent.maxX || minY < parent.minY || maxY > parent.maxY) {
+            this.remove(item);
+            item.minX = minX;
+            item.maxX = maxX;
+            item.minY = minY;
+            item.maxY = maxY;
+            this.insert(item);
         } else {
-            let parent = item.parentNode,
-                minx = x - w/2, maxx = x + w/2, miny = y - h/2, maxy = y + h/2
-            if(minx < parent.minX || maxx > parent.maxX || miny < parent.minY || maxy > parent.maxY) {
-                this.remove(item)
-                item.minX = minx
-                item.maxX = maxx
-                item.minY = miny
-                item.maxY = maxy
-                this.insert(item)
-            } else {
-                item.minX = minx
-                item.maxX = maxx
-                item.minY = miny
-                item.maxY = maxy
-            }
+            item.minX = minX;
+            item.maxX = maxX;
+            item.minY = minY;
+            item.maxY = maxY;
         }
-        return this
+
+        return this;
     },
 
     clear: function () {
@@ -331,7 +322,9 @@ rbush.prototype = {
 
         // put the item into the node
         node.children.push(item);
-        extend(node, bbox);
+        item.parentNode = node;
+
+        extendEps(node, bbox, epsPercentage);
 
         // split on node overflow; propagate upwards if necessary
         while (level >= 0) {
@@ -524,16 +517,31 @@ function extend(a, b) {
     a.maxY = Math.max(a.maxY, b.maxY);
     return a;
 }
+function extendEps(a, b, eps) {
+    a.minX = Math.min(a.minX, b.minX);
+    a.minY = Math.min(a.minY, b.minY);
+    a.maxX = Math.max(a.maxX, b.maxX);
+    a.maxY = Math.max(a.maxY, b.maxY);
+
+    var e = (a.maxX - a.minX) * eps
+
+    a.minX -= e;
+    a.minY -= e;
+    a.maxX += e;
+    a.maxY += e;
+
+    return a;
+}
 
 function compareNodeMinX(a, b) { return a.minX - b.minX; }
 function compareNodeMinY(a, b) { return a.minY - b.minY; }
 
-function bboxArea(a)   { return (a.maxX - a.minX) * (a.maxY - a.minY); }
+function bboxArea(a) { return (a.maxX - a.minX) * (a.maxY - a.minY); }
 function bboxMargin(a) { return (a.maxX - a.minX) + (a.maxY - a.minY); }
 
 function enlargedArea(a, b) {
     return (Math.max(b.maxX, a.maxX) - Math.min(b.minX, a.minX)) *
-           (Math.max(b.maxY, a.maxY) - Math.min(b.minY, a.minY));
+        (Math.max(b.maxY, a.maxY) - Math.min(b.minY, a.minY));
 }
 
 function intersectionArea(a, b) {
@@ -543,21 +551,21 @@ function intersectionArea(a, b) {
         maxY = Math.min(a.maxY, b.maxY);
 
     return Math.max(0, maxX - minX) *
-           Math.max(0, maxY - minY);
+        Math.max(0, maxY - minY);
 }
 
 function contains(a, b) {
     return a.minX <= b.minX &&
-           a.minY <= b.minY &&
-           b.maxX <= a.maxX &&
-           b.maxY <= a.maxY;
+        a.minY <= b.minY &&
+        b.maxX <= a.maxX &&
+        b.maxY <= a.maxY;
 }
 
 function intersects(a, b) {
     return b.minX <= a.maxX &&
-           b.minY <= a.maxY &&
-           b.maxX >= a.minX &&
-           b.maxY >= a.minY;
+        b.minY <= a.maxY &&
+        b.maxX >= a.minX &&
+        b.maxY >= a.minY;
 }
 
 function createNode(children) {
